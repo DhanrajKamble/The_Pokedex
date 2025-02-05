@@ -4,6 +4,7 @@ import PokeInfo from "./components/PokeInfo";
 import axios from "axios";
 import { useEffect } from "react";
 
+
 const App = () => {
   const [pokeData, setPokeData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -12,7 +13,9 @@ const App = () => {
   const [nextUrl, setNextUrl] = useState();
   const [prevUrl, setPrevUrl] = useState();
 
-  const pokeFun = async () =>{
+  const [pokeDex, setPokeDex] = useState();
+
+  const pokeFun = async () => {
     setLoading(true);
     const res = await axios.get(url);
     // console.log(res.data);
@@ -22,13 +25,18 @@ const App = () => {
     setLoading(false);
   }
 
-  const getPokemon = async (res) =>{
-    res.map((item) =>{
-      console.log(item.url);
-    })
-  }
+  const getPokemon = async (res) => {
+    const pokemonDetails = await Promise.all(
+      res.map(async (item) => {
+        const result = await axios.get(item.url);
+        return result.data;
+      })
+    );
 
-  useEffect(()=>{
+    setPokeData(prevState => [...prevState, ...pokemonDetails]);
+  };
+
+  useEffect(() => {
     pokeFun();
   }, [url])
 
@@ -36,21 +44,24 @@ const App = () => {
     <main className="container">
 
       <div className="left-content">
-        <Card />
-        <Card />
-        <Card />
-        <Card />
-        <Card />
-        <Card />
-         <div className="btn-group">
-          <button>Previous</button>
-          <button>Next</button>
-         </div>
+        <Card pokemon={pokeData} loading={loading} infoPokemon={poke => setPokeDex(poke)} />
+
+        <div className="btn-group">
+          {prevUrl && <button onClick={() => {
+            setPokeData([])
+            setUrl(prevUrl)
+          }}>Previous</button>}
+
+          {nextUrl && <button onClick={() => {
+            setPokeData([])
+            setUrl(nextUrl)
+          }}>Next</button>}
+        </div>
 
       </div>
 
       <div className="right-content">
-        <PokeInfo />
+        <PokeInfo data={pokeDex} />
       </div>
 
     </main>
